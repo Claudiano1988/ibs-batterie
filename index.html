@@ -3,415 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IBS Batterie - Gestione Preventivi</title>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>IBS Batterie</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { color: #667eea; font-size: 28px; }
+        .header img { height: 50px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { background: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        .tab.active { background: #667eea; color: white; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input[type="text"], input[type="number"], input[type="file"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; font-size: 14px; }
+        button { background: #667eea; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #5568d3; }
+        .product-list { max-height: 300px; overflow-y: auto; }
+        .product-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .product-item:hover { background: #f5f5f5; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
+        .label { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .value { font-size: 16px; font-weight: bold; }
+        .price-box { background: #f0f4ff; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .quote-box { background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-family: monospace; font-size: 13px; }
+        .hidden { display: none; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-primary { flex: 1; }
+        .btn-success { flex: 1; background: #10b981; }
+        .btn-success:hover { background: #059669; }
+        .history-item { background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .search-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-tab { flex: 1; padding: 10px; background: #f3f4f6; border: none; border-radius: 5px; cursor: pointer; }
+        .search-tab.active { background: #667eea; color: white; }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        const Search = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>);
-        const Upload = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>);
-        const Clock = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>);
-        const Copy = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>);
-        const FileText = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>);
-        const Trash2 = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>);
-        const AlertCircle = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>);
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>IBS Batterie</h1>
+                <p style="color: #666;">Gestione Preventivi</p>
+            </div>
+            <img src="https://www.ibsbatterie.it/wp-content/uploads/2020/01/logo.png" alt="Logo" onerror="this.style.display='none'">
+        </div>
 
-        const IBSBatterieApp = () => {
-            const [products, setProducts] = useState([]);
-            const [stock, setStock] = useState([]);
-            const [searchTerm, setSearchTerm] = useState('');
-            const [selectedProduct, setSelectedProduct] = useState(null);
-            const [discount1, setDiscount1] = useState('');
-            const [discount2, setDiscount2] = useState('');
-            const [quantity, setQuantity] = useState(1);
-            const [history, setHistory] = useState([]);
-            const [activeTab, setActiveTab] = useState('search');
-            const [searchType, setSearchType] = useState('code');
-            const [dimLength, setDimLength] = useState('');
-            const [dimWidth, setDimWidth] = useState('');
-            const [dimHeight, setDimHeight] = useState('');
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('search')">🔍 Ricerca</button>
+            <button class="tab" onclick="showTab('upload')">📤 Carica File</button>
+            <button class="tab" onclick="showTab('history')">🕐 Storico</button>
+        </div>
 
-            useEffect(() => {
-                const savedProducts = localStorage.getItem('ibs-products');
-                const savedStock = localStorage.getItem('ibs-stock');
-                const savedHistory = localStorage.getItem('ibs-history');
-                if (savedProducts) setProducts(JSON.parse(savedProducts));
-                if (savedStock) setStock(JSON.parse(savedStock));
-                if (savedHistory) setHistory(JSON.parse(savedHistory));
-            }, []);
+        <div id="searchTab">
+            <div class="card">
+                <div class="search-tabs">
+                    <button class="search-tab active" onclick="setSearchType('code')">Cerca per Codice</button>
+                    <button class="search-tab" onclick="setSearchType('dim')">Cerca per Dimensioni</button>
+                </div>
 
-            const handleExcelUpload = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    try {
-                        let jsonData;
-                        if (file.name.endsWith('.csv')) {
-                            const text = event.target.result;
-                            const lines = text.split('\n');
-                            const headers = lines[0].split(';').map(h => h.trim());
-                            jsonData = lines.slice(1).filter(line => line.trim()).map(line => {
-                                const values = line.split(';');
-                                const obj = {};
-                                headers.forEach((header, index) => {
-                                    obj[header] = values[index] ? values[index].trim() : '';
-                                });
-                                return obj;
-                            });
-                        } else {
-                            const data = new Uint8Array(event.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const sheetName = workbook.SheetNames[0];
-                            const worksheet = workbook.Sheets[sheetName];
-                            jsonData = XLSX.utils.sheet_to_json(worksheet);
-                        }
-                        const formattedProducts = jsonData.map(row => {
-                            const listinoRaw = row['Listino'] || row['LISTINO'] || '0';
-                            const listinoClean = listinoRaw.toString().replace('€', '').replace(/\s/g, '').replace(',', '.');
-                            return {
-                                codice: row['Codice Articolo'] || row['CODICE ARTICOLO'] || '',
-                                v: row['V'] || '',
-                                ah: row['Ah (20h)'] || row['AH (20h)'] || row['AH'] || '',
-                                lunghezza: row['Lunghezza'] || row['LUNGHEZZA'] || '',
-                                larghezza: row['Larghezza'] || row['LARGHEZZA'] || '',
-                                altezza: row['Altezza'] || row['ALTEZZA'] || '',
-                                altezzaMax: row['Altezza Max'] || row['ALTEZZA MAX'] || '',
-                                peso: row['Peso'] || row['PESO'] || '',
-                                qtaPallet: row["Q.tà Pallet"] || row["Q.TA' PALLET"] || row['QTA PALLET'] || '',
-                                listino: parseFloat(listinoClean) || 0
-                            };
-                        });
-                        setProducts(formattedProducts);
-                        localStorage.setItem('ibs-products', JSON.stringify(formattedProducts));
-                        alert(`Listino caricato con successo! ${formattedProducts.length} prodotti caricati.`);
-                    } catch (error) {
-                        alert('Errore nel caricamento del file. Verifica il formato.');
-                    }
-                };
-                if (file.name.endsWith('.csv')) {
-                    reader.readAsText(file);
-                } else {
-                    reader.readAsArrayBuffer(file);
-                }
-            };
+                <div id="codeSearch">
+                    <input type="text" id="searchInput" placeholder="Cerca codice articolo..." oninput="search()">
+                    <div id="results" class="product-list"></div>
+                </div>
 
-            const handleStockExcelUpload = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    try {
-                        const data = new Uint8Array(event.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const sheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[sheetName];
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                        const formattedStock = jsonData.map(row => ({
-                            codice: row['CODICE ARTICOLO'] || row['Codice Articolo'] || '',
-                            descrizione: row['DESCRIZIONE'] || row['Descrizione'] || '',
-                            giacenza: parseInt(row['GIACENZA'] || 0),
-                            ordClienti: parseInt(row['ORD. CLI.'] || row['ORD CLI'] || 0),
-                            ordFornitori: parseInt(row['ORD. FOR.'] || row['ORD FOR'] || 0),
-                            disponibile: parseInt(row['DISPON.'] || row['DISPON'] || 0)
-                        }));
-                        setStock(formattedStock);
-                        localStorage.setItem('ibs-stock', JSON.stringify(formattedStock));
-                        alert('Giacenze caricate con successo!');
-                    } catch (error) {
-                        alert('Errore nel caricamento del file. Verifica il formato.');
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            };
+                <div id="dimSearch" class="hidden">
+                    <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div>
+                            <div class="label">Lunghezza (mm)</div>
+                            <input type="number" id="dimL" placeholder="260" oninput="searchByDim()">
+                        </div>
+                        <div>
+                            <div class="label">Larghezza (mm)</div>
+                            <input type="number" id="dimW" placeholder="180" oninput="searchByDim()">
+                        </div>
+                        <div>
+                            <div class="label">Altezza (mm)</div>
+                            <input type="number" id="dimH" placeholder="247" oninput="searchByDim()">
+                        </div>
+                    </div>
+                    <div id="dimResults" class="product-list"></div>
+                </div>
+            </div>
 
-            const handleStockManualInput = (text) => {
-                try {
-                    const lines = text.trim().split('\n');
-                    const stockData = [];
-                    for (let line of lines) {
-                        const parts = line.trim().split(/\s+/);
-                        if (parts.length >= 5) {
-                            stockData.push({
-                                codice: parts[0],
-                                descrizione: parts.slice(1, parts.length - 4).join(' '),
-                                giacenza: parseInt(parts[parts.length - 4]) || 0,
-                                ordClienti: parseInt(parts[parts.length - 3]) || 0,
-                                ordFornitori: parseInt(parts[parts.length - 2]) || 0,
-                                disponibile: parseInt(parts[parts.length - 1]) || 0
-                            });
-                        }
-                    }
-                    if (stockData.length > 0) {
-                        setStock(stockData);
-                        localStorage.setItem('ibs-stock', JSON.stringify(stockData));
-                        alert(`${stockData.length} articoli caricati con successo!`);
-                    }
-                } catch (error) {
-                    alert('Errore nel parsing dei dati.');
-                }
-            };
+            <div id="productCard" class="card hidden">
+                <h2 id="prodCode" style="color: #667eea; margin-bottom: 15px;"></h2>
+                <div class="grid">
+                    <div><div class="label">Tensione</div><div class="value" id="prodV"></div></div>
+                    <div><div class="label">Capacità</div><div class="value" id="prodAh"></div></div>
+                    <div><div class="label">Dimensioni</div><div class="value" id="prodDim"></div></div>
+                    <div><div class="label">Peso</div><div class="value" id="prodPeso"></div></div>
+                </div>
 
-            const filteredProducts = searchType === 'code' 
-                ? products.filter(p => p.codice.toLowerCase().includes(searchTerm.toLowerCase()))
-                : products.filter(p => {
-                    if (!dimLength && !dimWidth && !dimHeight) return false;
-                    const l = parseFloat(p.lunghezza) || 0;
-                    const w = parseFloat(p.larghezza) || 0;
-                    const h = parseFloat(p.altezza) || 0;
-                    const searchL = parseFloat(dimLength) || null;
-                    const searchW = parseFloat(dimWidth) || null;
-                    const searchH = parseFloat(dimHeight) || null;
-                    const matchL = searchL ? Math.abs(l - searchL) <= 10 : true;
-                    const matchW = searchW ? Math.abs(w - searchW) <= 10 : true;
-                    const matchH = searchH ? Math.abs(h - searchH) <= 10 : true;
-                    return matchL && matchW && matchH;
+                <div style="margin-top: 20px;">
+                    <div class="label">Prezzo Listino</div>
+                    <div class="value" id="prodListino" style="font-size: 20px; margin-bottom: 15px;"></div>
+                    
+                    <div class="grid">
+                        <div>
+                            <div class="label">Sconto 1 %</div>
+                            <input type="number" id="disc1" placeholder="0" min="0" max="100" step="0.1" oninput="calculate()">
+                        </div>
+                        <div>
+                            <div class="label">Sconto 2 %</div>
+                            <input type="number" id="disc2" placeholder="0" min="0" max="100" step="0.1" oninput="calculate()">
+                        </div>
+                    </div>
+
+                    <div class="label">Quantità</div>
+                    <input type="number" id="qty" value="1" min="1" oninput="calculate()">
+
+                    <div class="price-box">
+                        <span style="font-size: 18px; font-weight: bold; color: #667eea;">Prezzo Netto:</span>
+                        <span id="netPrice" style="font-size: 24px; font-weight: bold; color: #667eea;">€0.00</span>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn-primary" onclick="copyQuote()">📋 Copia Preventivo</button>
+                        <button class="btn-success" onclick="saveHistory()">💾 Salva Storico</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="uploadTab" class="hidden">
+            <div class="card">
+                <h3>Carica Listino Prodotti</h3>
+                <input type="file" id="listFile" accept=".csv,.xlsx,.xls" onchange="loadList(event)">
+                <p style="color: #666; font-size: 12px; margin-top: 5px;">Prodotti caricati: <span id="prodCount">0</span></p>
+            </div>
+            <div class="card">
+                <h3>Carica Giacenze</h3>
+                <input type="file" id="stockFile" accept=".xlsx,.xls" onchange="loadStock(event)">
+                <p style="color: #666; font-size: 12px; margin-top: 5px;">Giacenze caricate: <span id="stockCount">0</span></p>
+            </div>
+        </div>
+
+        <div id="historyTab" class="hidden">
+            <div id="historyList"></div>
+            <div id="emptyHistory" class="card" style="text-align: center; padding: 40px;">
+                <p style="color: #999;">Nessun preventivo salvato</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let products = [];
+        let stock = [];
+        let history = [];
+        let selectedProduct = null;
+        let searchType = 'code';
+
+        // Carica dati salvati
+        window.onload = () => {
+            products = JSON.parse(localStorage.getItem('products') || '[]');
+            stock = JSON.parse(localStorage.getItem('stock') || '[]');
+            history = JSON.parse(localStorage.getItem('history') || '[]');
+            document.getElementById('prodCount').textContent = products.length;
+            document.getElementById('stockCount').textContent = stock.length;
+            renderHistory();
+        };
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('searchTab').className = tab === 'search' ? '' : 'hidden';
+            document.getElementById('uploadTab').className = tab === 'upload' ? '' : 'hidden';
+            document.getElementById('historyTab').className = tab === 'history' ? '' : 'hidden';
+        }
+
+        function setSearchType(type) {
+            searchType = type;
+            document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('codeSearch').className = type === 'code' ? '' : 'hidden';
+            document.getElementById('dimSearch').className = type === 'dim' ? '' : 'hidden';
+        }
+
+        function loadList(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const text = evt.target.result;
+                const lines = text.split('\n');
+                const headers = lines[0].split(';');
+                
+                products = lines.slice(1).filter(l => l.trim()).map(line => {
+                    const vals = line.split(';');
+                    const price = vals[9] ? vals[9].replace('€','').replace(/\s/g,'').replace(',','.') : '0';
+                    return {
+                        codice: vals[0] || '',
+                        v: vals[1] || '',
+                        ah: vals[2] || '',
+                        lunghezza: vals[3] || '',
+                        larghezza: vals[4] || '',
+                        altezza: vals[5] || '',
+                        peso: vals[7] || '',
+                        listino: parseFloat(price) || 0
+                    };
                 });
-
-            const getStockInfo = (codice) => stock.find(s => s.codice === codice) || null;
-
-            const calculateNetPrice = () => {
-                if (!selectedProduct) return '0.00';
-                const listPrice = parseFloat(selectedProduct.listino) || 0;
-                const disc1 = parseFloat(discount1) || 0;
-                const disc2 = parseFloat(discount2) || 0;
-                const priceAfterDiscount1 = listPrice * (1 - disc1 / 100);
-                const finalPrice = priceAfterDiscount1 * (1 - disc2 / 100);
-                return finalPrice.toFixed(2);
+                
+                localStorage.setItem('products', JSON.stringify(products));
+                document.getElementById('prodCount').textContent = products.length;
+                alert(`${products.length} prodotti caricati!`);
             };
+            reader.readAsText(file);
+        }
 
-            const calculateTotalDiscount = () => {
-                if (!selectedProduct) return '0.00';
-                const listPrice = parseFloat(selectedProduct.listino) || 0;
-                const netPrice = parseFloat(calculateNetPrice());
-                return (((listPrice - netPrice) / listPrice * 100)).toFixed(2);
-            };
+        function loadStock(e) {
+            alert('Per le giacenze, usa file Excel. Funzionalità in sviluppo.');
+        }
 
-            const generateQuote = () => {
-                if (!selectedProduct) return '';
-                const stockInfo = getStockInfo(selectedProduct.codice);
-                const netPrice = calculateNetPrice();
-                const disponibilita = stockInfo && stockInfo.disponibile > 0 ? 'PRONTA' : 'DA VERIFICARE';
-                return `CODICE ARTICOLO: ${selectedProduct.codice}
+        function search() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            if (!term) {
+                document.getElementById('results').innerHTML = '';
+                return;
+            }
+            
+            const filtered = products.filter(p => p.codice.toLowerCase().includes(term)).slice(0, 20);
+            document.getElementById('results').innerHTML = filtered.map(p => 
+                `<div class="product-item" onclick="selectProduct('${p.codice}')">
+                    <div style="font-weight: bold;">${p.codice}</div>
+                    <div style="font-size: 12px; color: #666;">${p.v}V - ${p.ah}Ah - €${p.listino.toFixed(2)}</div>
+                </div>`
+            ).join('');
+        }
+
+        function searchByDim() {
+            const l = parseFloat(document.getElementById('dimL').value) || 0;
+            const w = parseFloat(document.getElementById('dimW').value) || 0;
+            const h = parseFloat(document.getElementById('dimH').value) || 0;
+            
+            if (!l && !w && !h) {
+                document.getElementById('dimResults').innerHTML = '';
+                return;
+            }
+            
+            const filtered = products.filter(p => {
+                const pl = parseFloat(p.lunghezza) || 0;
+                const pw = parseFloat(p.larghezza) || 0;
+                const ph = parseFloat(p.altezza) || 0;
+                
+                const matchL = l ? Math.abs(pl - l) <= 10 : true;
+                const matchW = w ? Math.abs(pw - w) <= 10 : true;
+                const matchH = h ? Math.abs(ph - h) <= 10 : true;
+                
+                return matchL && matchW && matchH;
+            }).slice(0, 20);
+            
+            document.getElementById('dimResults').innerHTML = filtered.map(p => 
+                `<div class="product-item" onclick="selectProduct('${p.codice}')">
+                    <div style="font-weight: bold;">${p.codice}</div>
+                    <div style="font-size: 12px; color: #666;">${p.lunghezza}x${p.larghezza}x${p.altezza}mm - €${p.listino.toFixed(2)}</div>
+                </div>`
+            ).join('');
+        }
+
+        function selectProduct(code) {
+            selectedProduct = products.find(p => p.codice === code);
+            if (!selectedProduct) return;
+            
+            document.getElementById('productCard').classList.remove('hidden');
+            document.getElementById('prodCode').textContent = selectedProduct.codice;
+            document.getElementById('prodV').textContent = selectedProduct.v + 'V';
+            document.getElementById('prodAh').textContent = selectedProduct.ah + 'Ah';
+            document.getElementById('prodDim').textContent = `${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selectedProduct.altezza}mm`;
+            document.getElementById('prodPeso').textContent = selectedProduct.peso + 'kg';
+            document.getElementById('prodListino').textContent = '€' + selectedProduct.listino.toFixed(2);
+            
+            document.getElementById('disc1').value = '';
+            document.getElementById('disc2').value = '';
+            document.getElementById('qty').value = 1;
+            
+            document.getElementById('searchInput').value = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('dimL').value = '';
+            document.getElementById('dimW').value = '';
+            document.getElementById('dimH').value = '';
+            document.getElementById('dimResults').innerHTML = '';
+            
+            calculate();
+            
+            document.getElementById('productCard').scrollIntoView({behavior: 'smooth'});
+        }
+
+        function calculate() {
+            if (!selectedProduct) return;
+            
+            const list = selectedProduct.listino;
+            const d1 = parseFloat(document.getElementById('disc1').value) || 0;
+            const d2 = parseFloat(document.getElementById('disc2').value) || 0;
+            
+            const after1 = list * (1 - d1/100);
+            const final = after1 * (1 - d2/100);
+            
+            document.getElementById('netPrice').textContent = '€' + final.toFixed(2);
+        }
+
+        function copyQuote() {
+            if (!selectedProduct) return;
+            
+            const qty = document.getElementById('qty').value;
+            const net = document.getElementById('netPrice').textContent;
+            
+            const quote = `CODICE ARTICOLO: ${selectedProduct.codice}
 TENSIONE: ${selectedProduct.v}V
 CAPACITÀ: ${selectedProduct.ah}Ah
 DIMENSIONI: ${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selectedProduct.altezza}mm
 
-Q.TÀ OFFERTA: ${quantity} pz
-PREZZO NETTO: €${netPrice} cad.
+Q.TÀ OFFERTA: ${qty} pz
+PREZZO NETTO: ${net} cad.
 
-DISPONIBILITÀ: ${disponibilita}
+DISPONIBILITÀ: PRONTA
 CONSEGNA: Pronta Consegna`;
-            };
+            
+            navigator.clipboard.writeText(quote);
+            alert('Preventivo copiato!');
+        }
 
-            const saveToHistory = () => {
-                if (!selectedProduct) return;
-                const quote = {
-                    id: Date.now(),
-                    date: new Date().toLocaleString('it-IT'),
-                    codice: selectedProduct.codice,
-                    listino: selectedProduct.listino.toFixed(2),
-                    sconto1: discount1 || 0,
-                    sconto2: discount2 || 0,
-                    quantita: quantity,
-                    prezzoNetto: calculateNetPrice(),
-                    testo: generateQuote()
-                };
-                const newHistory = [quote, ...history].slice(0, 20);
-                setHistory(newHistory);
-                localStorage.setItem('ibs-history', JSON.stringify(newHistory));
-                setQuantity(1);
-                alert('Preventivo salvato nello storico!');
+        function saveHistory() {
+            if (!selectedProduct) return;
+            
+            const item = {
+                id: Date.now(),
+                date: new Date().toLocaleString('it-IT'),
+                codice: selectedProduct.codice,
+                qty: document.getElementById('qty').value,
+                price: document.getElementById('netPrice').textContent,
+                disc1: document.getElementById('disc1').value || 0,
+                disc2: document.getElementById('disc2').value || 0
             };
+            
+            history.unshift(item);
+            history = history.slice(0, 20);
+            localStorage.setItem('history', JSON.stringify(history));
+            
+            document.getElementById('qty').value = 1;
+            
+            alert('Salvato nello storico!');
+            renderHistory();
+        }
 
-            const copyToClipboard = (text) => {
-                navigator.clipboard.writeText(text);
-                alert('Preventivo copiato negli appunti!');
-            };
-
-            const deleteFromHistory = (id) => {
-                const newHistory = history.filter(h => h.id !== id);
-                setHistory(newHistory);
-                localStorage.setItem('ibs-history', JSON.stringify(newHistory));
-            };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-                    <div className="max-w-4xl mx-auto p-4">
-                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 flex items-center justify-between">
-                            <div>
-                                <h1 className="text-3xl font-bold text-indigo-900 mb-2">IBS Batterie</h1>
-                                <p className="text-gray-600">Gestione Preventivi e Disponibilità</p>
-                            </div>
-                            <img src="https://www.ibsbatterie.it/wp-content/uploads/2020/01/logo.png" alt="IBS Batterie Logo" className="h-16 object-contain" onError={(e) => e.target.style.display = 'none'} />
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const empty = document.getElementById('emptyHistory');
+            
+            if (history.length === 0) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            
+            empty.classList.add('hidden');
+            list.innerHTML = history.map(h => `
+                <div class="history-item">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div>
+                            <div style="font-weight: bold; font-size: 16px;">${h.codice}</div>
+                            <div style="font-size: 12px; color: #666;">${h.date}</div>
                         </div>
-                        <div className="flex space-x-2 mb-6">
-                            <button onClick={() => setActiveTab('search')} className={`flex items-center px-4 py-2 rounded-lg ${activeTab === 'search' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}><span className="mr-2"><Search /></span>Ricerca</button>
-                            <button onClick={() => setActiveTab('upload')} className={`flex items-center px-4 py-2 rounded-lg ${activeTab === 'upload' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}><span className="mr-2"><Upload /></span>Carica File</button>
-                            <button onClick={() => setActiveTab('history')} className={`flex items-center px-4 py-2 rounded-lg ${activeTab === 'history' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}><span className="mr-2"><Clock /></span>Storico ({history.length})</button>
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; color: #666;">${h.disc1}% + ${h.disc2}% - ${h.qty}pz</div>
+                            <div style="font-size: 18px; font-weight: bold; color: #667eea;">${h.price}</div>
                         </div>
-                        {activeTab === 'search' && (
-                            <div className="space-y-6">
-                                <div className="bg-white rounded-lg shadow-lg p-6">
-                                    <div className="mb-4 flex space-x-2">
-                                        <button onClick={() => { setSearchType('code'); setSearchTerm(''); setDimLength(''); setDimWidth(''); setDimHeight(''); }} className={`flex-1 px-4 py-2 rounded-lg ${searchType === 'code' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Cerca per Codice</button>
-                                        <button onClick={() => { setSearchType('dimensions'); setSearchTerm(''); }} className={`flex-1 px-4 py-2 rounded-lg ${searchType === 'dimensions' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Cerca per Dimensioni</button>
-                                    </div>
-                                    {searchType === 'code' ? (
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-3 text-gray-400"><Search /></span>
-                                            <input type="text" placeholder="Cerca codice articolo..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div><label className="text-sm text-gray-600 block mb-1">Lunghezza (mm)</label><input type="number" placeholder="es. 260" value={dimLength} onChange={(e) => setDimLength(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" /></div>
-                                            <div><label className="text-sm text-gray-600 block mb-1">Larghezza (mm)</label><input type="number" placeholder="es. 180" value={dimWidth} onChange={(e) => setDimWidth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" /></div>
-                                            <div><label className="text-sm text-gray-600 block mb-1">Altezza (mm)</label><input type="number" placeholder="es. 247" value={dimHeight} onChange={(e) => setDimHeight(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" /></div>
-                                        </div>
-                                    )}
-                                    {(searchTerm || dimLength || dimWidth || dimHeight) && (
-                                        <div className="mt-4 max-h-60 overflow-y-auto">
-                                            {filteredProducts.map((product, idx) => (
-                                                <div key={idx} onClick={() => { setSelectedProduct(product); setSearchTerm(''); setDimLength(''); setDimWidth(''); setDimHeight(''); setQuantity(1); }} className="p-3 hover:bg-indigo-50 cursor-pointer rounded border-b border-gray-100">
-                                                    <div className="font-semibold text-indigo-900">{product.codice}</div>
-                                                    <div className="text-sm text-gray-600">{product.v}V - {product.ah}Ah - {product.lunghezza}x{product.larghezza}x{product.altezza}mm - €{product.listino.toFixed(2)}</div>
-                                                </div>
-                                            ))}
-                                            {filteredProducts.length === 0 && <div className="text-center text-gray-500 py-4">Nessun prodotto trovato</div>}
-                                        </div>
-                                    )}
-                                </div>
-                                {selectedProduct && (
-                                    <div className="bg-white rounded-lg shadow-lg p-6">
-                                        <h2 className="text-2xl font-bold text-indigo-900 mb-4">{selectedProduct.codice}</h2>
-                                        <div className="grid grid-cols-2 gap-4 mb-6">
-                                            <div><label className="text-sm text-gray-600">Tensione</label><div className="font-semibold">{selectedProduct.v}V</div></div>
-                                            <div><label className="text-sm text-gray-600">Capacità</label><div className="font-semibold">{selectedProduct.ah}Ah</div></div>
-                                            <div><label className="text-sm text-gray-600">Dimensioni (LxLxH)</label><div className="font-semibold">{selectedProduct.lunghezza}x{selectedProduct.larghezza}x{selectedProduct.altezza}mm</div></div>
-                                            <div><label className="text-sm text-gray-600">Peso</label><div className="font-semibold">{selectedProduct.peso}kg</div></div>
-                                            <div><label className="text-sm text-gray-600">Q.tà Pallet</label><div className="font-semibold">{selectedProduct.qtaPallet}</div></div>
-                                        </div>
-                                        <div className="border-t pt-4">
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Opzione 2: Incolla dati dal PDF</label>
-                                        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3 flex items-start">
-                                            <span className="mr-2"><AlertCircle /></span>
-                                            <p className="text-sm text-yellow-800">Apri il PDF, seleziona e copia i dati, poi incollali nella casella sotto</p>
-                                        </div>
-                                        <textarea placeholder="Incolla qui i dati dal PDF..." className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" onPaste={(e) => { setTimeout(() => { handleStockManualInput(e.target.value); e.target.value = ''; }, 100); }} />
-                                    </div>
-                                    <p className="text-sm text-gray-600 mt-2">Giacenze caricate: {stock.length}</p>
-                                </div>
-                            </div>
-                        )}
-                        {activeTab === 'history' && (
-                            <div className="space-y-4">
-                                {history.length === 0 ? (
-                                    <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-                                        <div className="mx-auto mb-4"><Clock /></div>
-                                        <p className="text-gray-500">Nessun preventivo nello storico</p>
-                                    </div>
-                                ) : (
-                                    history.map((item) => (
-                                        <div key={item.id} className="bg-white rounded-lg shadow-lg p-6">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-indigo-900">{item.codice}</h3>
-                                                    <p className="text-sm text-gray-500">{item.date}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-sm text-gray-600">
-                                                        {item.sconto1 > 0 && item.sconto2 > 0 
-                                                            ? `${item.sconto1}% + ${item.sconto2}%`
-                                                            : item.sconto1 > 0 
-                                                                ? `Sconto ${item.sconto1}%`
-                                                                : item.sconto2 > 0 
-                                                                    ? `Sconto ${item.sconto2}%`
-                                                                    : 'Nessuno sconto'}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">{item.quantita} pz</div>
-                                                    <div className="text-xl font-bold text-indigo-600">€{item.prezzoNetto}</div>
-                                                </div>
-                                            </div>
-                                            <div className="flex space-x-2">
-                                                <button onClick={() => copyToClipboard(item.testo)} className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 flex items-center justify-center">
-                                                    <span className="mr-2"><Copy /></span>Copia
-                                                </button>
-                                                <button onClick={() => deleteFromHistory(item.id)} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-                                                    <Trash2 />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        )}
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button style="flex: 1;" onclick="copyHistoryQuote(${h.id})">📋 Copia</button>
+                        <button class="btn-danger" onclick="deleteHistory(${h.id})">🗑️</button>
                     </div>
                 </div>
-            );
-        };
-        ReactDOM.render(<IBSBatterieApp />, document.getElementById('root'));
+            `).join('');
+        }
+
+        function copyHistoryQuote(id) {
+            const item = history.find(h => h.id === id);
+            if (!item) return;
+            
+            const prod = products.find(p => p.codice === item.codice);
+            if (!prod) {
+                alert('Prodotto non trovato nel listino');
+                return;
+            }
+            
+            const quote = `CODICE ARTICOLO: ${prod.codice}
+TENSIONE: ${prod.v}V
+CAPACITÀ: ${prod.ah}Ah
+DIMENSIONI: ${prod.lunghezza}x${prod.larghezza}x${prod.altezza}mm
+
+Q.TÀ OFFERTA: ${item.qty} pz
+PREZZO NETTO: ${item.price} cad.
+
+DISPONIBILITÀ: PRONTA
+CONSEGNA: Pronta Consegna`;
+            
+            navigator.clipboard.writeText(quote);
+            alert('Preventivo copiato!');
+        }
+
+        function deleteHistory(id) {
+            history = history.filter(h => h.id !== id);
+            localStorage.setItem('history', JSON.stringify(history));
+            renderHistory();
+        }
     </script>
 </body>
-</html>4 mb-4">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="text-gray-700">Prezzo Listino:</span>
-                                                <span className="text-xl font-bold">€{selectedProduct.listino.toFixed(2)}</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-3 mb-3">
-                                                <div><label className="text-gray-700 text-sm block mb-1">Sconto 1 %:</label><input type="number" value={discount1} onChange={(e) => setDiscount1(e.target.value === '' ? '' : Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))} placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" min="0" max="100" step="0.1" /></div>
-                                                <div><label className="text-gray-700 text-sm block mb-1">Sconto 2 %:</label><input type="number" value={discount2} onChange={(e) => setDiscount2(e.target.value === '' ? '' : Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))} placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" min="0" max="100" step="0.1" /></div>
-                                            </div>
-                                            <div className="mb-3"><label className="text-gray-700 text-sm block mb-1">Quantità:</label><input type="number" value={quantity} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" min="1" /></div>
-                                            {((discount1 && parseFloat(discount1) > 0) || (discount2 && parseFloat(discount2) > 0)) && <div className="text-sm text-gray-600 mb-2">Sconto totale applicato: {calculateTotalDiscount()}%</div>}
-                                            <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-lg">
-                                                <span className="text-lg font-semibold text-indigo-900">Prezzo Netto:</span>
-                                                <span className="text-2xl font-bold text-indigo-600">€{calculateNetPrice()}</span>
-                                            </div>
-                                        </div>
-                                        {getStockInfo(selectedProduct.codice) && (
-                                            <div className="border-t pt-4">
-                                                <h3 className="font-semibold text-lg mb-3 text-indigo-900">Disponibilità Magazzino</h3>
-                                                {(() => {
-                                                    const stockInfo = getStockInfo(selectedProduct.codice);
-                                                    return (
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            <div className="bg-blue-50 p-3 rounded"><div className="text-sm text-gray-600">Giacenza</div><div className="text-xl font-bold text-blue-700">{stockInfo.giacenza} pz</div></div>
-                                                            <div className="bg-red-50 p-3 rounded"><div className="text-sm text-gray-600">Ordini Clienti</div><div className="text-xl font-bold text-red-700">{stockInfo.ordClienti} pz</div></div>
-                                                            <div className="bg-green-50 p-3 rounded"><div className="text-sm text-gray-600">Ordini Fornitori</div><div className="text-xl font-bold text-green-700">{stockInfo.ordFornitori} pz</div></div>
-                                                            <div className="bg-indigo-50 p-3 rounded"><div className="text-sm text-gray-600">Disponibile</div><div className="text-xl font-bold text-indigo-700">{stockInfo.disponibile} pz</div></div>
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
-                                        )}
-                                        <div className="mt-6 flex space-x-3">
-                                            <button onClick={() => copyToClipboard(generateQuote())} className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 flex items-center justify-center"><span className="mr-2"><Copy /></span>Copia Preventivo</button>
-                                            <button onClick={saveToHistory} className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center"><span className="mr-2"><FileText /></span>Salva Storico</button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {activeTab === 'upload' && (
-                            <div className="space-y-6">
-                                <div className="bg-white rounded-lg shadow-lg p-6">
-                                    <h3 className="text-xl font-bold text-indigo-900 mb-4">Carica Listino Prodotti</h3>
-                                    <input type="file" accept=".xlsx,.xls,.csv" onChange={handleExcelUpload} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 cursor-pointer" />
-                                    <p className="text-xs text-gray-500 mt-2">Formati supportati: Excel (.xlsx, .xls) e CSV</p>
-                                    <p className="text-sm text-gray-600 mt-2">Prodotti caricati: {products.length}</p>
-                                </div>
-                                <div className="bg-white rounded-lg shadow-lg p-6">
-                                    <h3 className="text-xl font-bold text-indigo-900 mb-4">Carica Giacenze</h3>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Opzione 1: Carica file Excel</label>
-                                        <input type="file" accept=".xlsx,.xls" onChange={handleStockExcelUpload} className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 cursor-pointer" />
-                                    </div>
-                                    <div className="border-t pt-
-                            <!DOCTYPE html>
-                                    
+</html>
