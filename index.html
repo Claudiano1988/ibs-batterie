@@ -93,6 +93,7 @@
                     <div><div class="label">Capacità</div><div class="value" id="prodAh"></div></div>
                     <div><div class="label">Dimensioni</div><div class="value" id="prodDim"></div></div>
                     <div><div class="label">Peso</div><div class="value" id="prodPeso"></div></div>
+                    <div><div class="label">Q.tà Pallet</div><div class="value" id="prodPallet"></div></div>
                 </div>
 
                 <div style="margin-top: 20px;">
@@ -186,30 +187,52 @@
             
             const reader = new FileReader();
             reader.onload = (evt) => {
-                const text = evt.target.result;
-                const lines = text.split('\n');
-                const headers = lines[0].split(';');
+                let text = evt.target.result;
                 
-                products = lines.slice(1).filter(l => l.trim()).map(line => {
-                    const vals = line.split(';');
-                    const price = vals[9] ? vals[9].replace('€','').replace(/\s/g,'').replace(',','.') : '0';
+                // Rimuovi BOM se presente
+                if (text.charCodeAt(0) === 0xFEFF) {
+                    text = text.substr(1);
+                }
+                
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                
+                if (lines.length === 0) {
+                    alert('File vuoto!');
+                    return;
+                }
+                
+                const headers = lines[0].split(';');
+                console.log('Headers:', headers);
+                
+                products = lines.slice(1).map(line => {
+                    const vals = line.split(';').map(v => v.trim());
+                    
+                    // Pulisci il prezzo
+                    let price = vals[9] || '0';
+                    price = price.replace('€', '').replace(/\s/g, '').replace(',', '.');
+                    
                     return {
-                        codice: vals[0] || '',
-                        v: vals[1] || '',
-                        ah: vals[2] || '',
-                        lunghezza: vals[3] || '',
-                        larghezza: vals[4] || '',
-                        altezza: vals[5] || '',
-                        peso: vals[7] || '',
+                        codice: (vals[0] || '').trim(),
+                        v: (vals[1] || '').trim(),
+                        ah: (vals[2] || '').trim(),
+                        lunghezza: (vals[3] || '').trim(),
+                        larghezza: (vals[4] || '').trim(),
+                        altezza: (vals[5] || '').trim(),
+                        peso: (vals[7] || '').trim(),
+                        qtaPallet: (vals[8] || '').trim(),
                         listino: parseFloat(price) || 0
                     };
-                });
+                }).filter(p => p.codice); // Filtra righe vuote
                 
                 localStorage.setItem('products', JSON.stringify(products));
                 document.getElementById('prodCount').textContent = products.length;
-                alert(`${products.length} prodotti caricati!`);
+                alert(`${products.length} prodotti caricati correttamente!`);
+                
+                console.log('Primi 3 prodotti:', products.slice(0, 3));
             };
-            reader.readAsText(file);
+            
+            // Prova con encoding UTF-8
+            reader.readAsText(file, 'UTF-8');
         }
 
         function loadStock(e) {
@@ -272,6 +295,7 @@
             document.getElementById('prodAh').textContent = selectedProduct.ah + 'Ah';
             document.getElementById('prodDim').textContent = `${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selectedProduct.altezza}mm`;
             document.getElementById('prodPeso').textContent = selectedProduct.peso + 'kg';
+            document.getElementById('prodPallet').textContent = selectedProduct.qtaPallet || '-';
             document.getElementById('prodListino').textContent = '€' + selectedProduct.listino.toFixed(2);
             
             document.getElementById('disc1').value = '';
@@ -317,7 +341,6 @@ DIMENSIONI: ${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selected
 Q.TÀ OFFERTA: ${qty} pz
 PREZZO NETTO: ${net} cad.
 
-DISPONIBILITÀ: PRONTA
 CONSEGNA: Pronta Consegna`;
             
             navigator.clipboard.writeText(quote);
@@ -396,7 +419,6 @@ DIMENSIONI: ${prod.lunghezza}x${prod.larghezza}x${prod.altezza}mm
 Q.TÀ OFFERTA: ${item.qty} pz
 PREZZO NETTO: ${item.price} cad.
 
-DISPONIBILITÀ: PRONTA
 CONSEGNA: Pronta Consegna`;
             
             navigator.clipboard.writeText(quote);
