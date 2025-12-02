@@ -87,7 +87,10 @@
             </div>
 
             <div id="productCard" class="card hidden">
-                <h2 id="prodCode" style="color: #667eea; margin-bottom: 15px;"></h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 id="prodCode" style="color: #667eea; margin: 0;"></h2>
+                    <a id="prodLink" href="#" target="_blank" style="background: #10b981; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 14px; font-weight: bold;">🔗 Vedi su ibsbatterie.it</a>
+                </div>
                 <div class="grid">
                     <div><div class="label">Tensione</div><div class="value" id="prodV"></div></div>
                     <div><div class="label">Capacità</div><div class="value" id="prodAh"></div></div>
@@ -291,6 +294,11 @@
             
             document.getElementById('productCard').classList.remove('hidden');
             document.getElementById('prodCode').textContent = selectedProduct.codice;
+            
+            // Crea il link al sito IBS Batterie
+            const searchUrl = `https://www.ibsbatterie.it/?s=${encodeURIComponent(selectedProduct.codice)}`;
+            document.getElementById('prodLink').href = searchUrl;
+            
             document.getElementById('prodV').textContent = selectedProduct.v + 'V';
             document.getElementById('prodAh').textContent = selectedProduct.ah + 'Ah';
             document.getElementById('prodDim').textContent = `${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selectedProduct.altezza}mm`;
@@ -327,21 +335,36 @@
             document.getElementById('netPrice').textContent = '€' + final.toFixed(2);
         }
 
+        function calculateTransport(qty) {
+            const peso = parseFloat(selectedProduct.peso) || 0;
+            const pesoTotale = peso * parseInt(qty);
+            
+            if (pesoTotale <= 100) {
+                return '€20,00';
+            } else {
+                const quintali = Math.ceil(pesoTotale / 100);
+                const costoTrasporto = quintali * 15;
+                return '€' + costoTrasporto.toFixed(2).replace('.', ',');
+            }
+        }
+
         function copyQuote() {
             if (!selectedProduct) return;
             
             const qty = document.getElementById('qty').value;
             const net = document.getElementById('netPrice').textContent;
+            const trasporto = calculateTransport(qty);
             
-            const quote = `CODICE ARTICOLO: ${selectedProduct.codice}
-TENSIONE: ${selectedProduct.v}V
-CAPACITÀ: ${selectedProduct.ah}Ah
-DIMENSIONI: ${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selectedProduct.altezza}mm
+            const quote = `**CODICE ARTICOLO:** ${selectedProduct.codice}
+**TENSIONE:** ${selectedProduct.v}V
+**CAPACITÀ:** ${selectedProduct.ah}Ah
+**DIMENSIONI:** ${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selectedProduct.altezza}mm
 
-Q.TÀ OFFERTA: ${qty} pz
-PREZZO NETTO: ${net} cad.
+**Q.TÀ OFFERTA:** ${qty} pz
+**PREZZO NETTO:** ${net} cad.
 
-CONSEGNA: Pronta Consegna`;
+**TRASPORTO:** ${trasporto}
+**CONSEGNA:** Pronta Consegna`;
             
             navigator.clipboard.writeText(quote);
             alert('Preventivo copiato!');
@@ -350,14 +373,26 @@ CONSEGNA: Pronta Consegna`;
         function saveHistory() {
             if (!selectedProduct) return;
             
+            // Chiedi il nome del cliente
+            const cliente = prompt('Inserisci il nome del cliente:');
+            if (!cliente || cliente.trim() === '') {
+                alert('Nome cliente obbligatorio per salvare il preventivo');
+                return;
+            }
+            
+            const qty = document.getElementById('qty').value;
+            const trasporto = calculateTransport(qty);
+            
             const item = {
                 id: Date.now(),
                 date: new Date().toLocaleString('it-IT'),
+                cliente: cliente.trim(),
                 codice: selectedProduct.codice,
-                qty: document.getElementById('qty').value,
+                qty: qty,
                 price: document.getElementById('netPrice').textContent,
                 disc1: document.getElementById('disc1').value || 0,
-                disc2: document.getElementById('disc2').value || 0
+                disc2: document.getElementById('disc2').value || 0,
+                trasporto: trasporto
             };
             
             history.unshift(item);
@@ -385,12 +420,14 @@ CONSEGNA: Pronta Consegna`;
                 <div class="history-item">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <div>
-                            <div style="font-weight: bold; font-size: 16px;">${h.codice}</div>
+                            <div style="font-weight: bold; font-size: 16px; color: #667eea;">👤 ${h.cliente}</div>
+                            <div style="font-weight: bold; font-size: 14px; margin-top: 5px;">${h.codice}</div>
                             <div style="font-size: 12px; color: #666;">${h.date}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="font-size: 12px; color: #666;">${h.disc1}% + ${h.disc2}% - ${h.qty}pz</div>
                             <div style="font-size: 18px; font-weight: bold; color: #667eea;">${h.price}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 3px;">Trasp: ${h.trasporto || 'N/D'}</div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px;">
@@ -411,15 +448,16 @@ CONSEGNA: Pronta Consegna`;
                 return;
             }
             
-            const quote = `CODICE ARTICOLO: ${prod.codice}
-TENSIONE: ${prod.v}V
-CAPACITÀ: ${prod.ah}Ah
-DIMENSIONI: ${prod.lunghezza}x${prod.larghezza}x${prod.altezza}mm
+            const quote = `**CODICE ARTICOLO:** ${prod.codice}
+**TENSIONE:** ${prod.v}V
+**CAPACITÀ:** ${prod.ah}Ah
+**DIMENSIONI:** ${prod.lunghezza}x${prod.larghezza}x${prod.altezza}mm
 
-Q.TÀ OFFERTA: ${item.qty} pz
-PREZZO NETTO: ${item.price} cad.
+**Q.TÀ OFFERTA:** ${item.qty} pz
+**PREZZO NETTO:** ${item.price} cad.
 
-CONSEGNA: Pronta Consegna`;
+**TRASPORTO:** ${item.trasporto}
+**CONSEGNA:** Pronta Consegna`;
             
             navigator.clipboard.writeText(quote);
             alert('Preventivo copiato!');
@@ -433,3 +471,4 @@ CONSEGNA: Pronta Consegna`;
     </script>
 </body>
 </html>
+
