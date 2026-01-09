@@ -341,6 +341,19 @@
             const qty = document.getElementById('qty').value;
             const net = document.getElementById('netPrice').textContent;
             
+            // Calcola trasporto
+            const peso = parseFloat(selectedProduct.peso) || 0;
+            const pesoTotale = peso * parseInt(qty);
+            let trasporto;
+            
+            if (pesoTotale <= 100) {
+                trasporto = '€20,00';
+            } else {
+                const quintali = Math.ceil(pesoTotale / 100);
+                const costoTrasporto = quintali * 15;
+                trasporto = '€' + costoTrasporto.toFixed(2).replace('.', ',');
+            }
+            
             const quote = `CODICE ARTICOLO: ${selectedProduct.codice}
 TENSIONE: ${selectedProduct.v}V
 CAPACITÀ: ${selectedProduct.ah}Ah
@@ -349,6 +362,7 @@ DIMENSIONI: ${selectedProduct.lunghezza}x${selectedProduct.larghezza}x${selected
 Q.TÀ OFFERTA: ${qty} pz
 PREZZO NETTO: ${net} cad.
 
+TRASPORTO: ${trasporto}
 CONSEGNA: Pronta Consegna`;
             
             navigator.clipboard.writeText(quote);
@@ -419,6 +433,19 @@ CONSEGNA: Pronta Consegna`;
                 return;
             }
             
+            // Calcola trasporto
+            const peso = parseFloat(prod.peso) || 0;
+            const pesoTotale = peso * parseInt(item.qty);
+            let trasporto;
+            
+            if (pesoTotale <= 100) {
+                trasporto = '€20,00';
+            } else {
+                const quintali = Math.ceil(pesoTotale / 100);
+                const costoTrasporto = quintali * 15;
+                trasporto = '€' + costoTrasporto.toFixed(2).replace('.', ',');
+            }
+            
             const quote = `CODICE ARTICOLO: ${prod.codice}
 TENSIONE: ${prod.v}V
 CAPACITÀ: ${prod.ah}Ah
@@ -427,6 +454,7 @@ DIMENSIONI: ${prod.lunghezza}x${prod.larghezza}x${prod.altezza}mm
 Q.TÀ OFFERTA: ${item.qty} pz
 PREZZO NETTO: ${item.price} cad.
 
+TRASPORTO: ${trasporto}
 CONSEGNA: Pronta Consegna`;
             
             navigator.clipboard.writeText(quote);
